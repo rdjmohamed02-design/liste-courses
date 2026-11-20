@@ -1,1 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liste de courses</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f4f6f8;
+      margin: 0;
+      padding: 16px;
+    }
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    h1 { margin-top: 0; font-size: 1.6rem; }
+    form { display: flex; gap: 8px; }
+    input[type="text"] {
+      flex: 1;
+      min-width: 0;
+      padding: 10px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    button {
+      padding: 10px 14px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #2563eb;
+      color: #fff;
+    }
+    ul { list-style: none; padding: 0; margin: 16px 0; }
+    li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      background: #f9fafb;
+    }
+    li span { flex: 1; }
+    /* Articles cochés en vert */
+    li.coche {
+      background: #dcfce7;
+      color: #15803d;
+    }
+    li.coche span { text-decoration: line-through; }
+    .supprimer {
+      background: transparent;
+      color: #999;
+      padding: 4px 8px;
+    }
+    #tout-effacer {
+      width: 100%;
+      background: #dc2626;
+    }
+    #tout-effacer:disabled { background: #e5a3a3; cursor: default; }
+    .vide { color: #888; justify-content: center; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>🛒 Liste de courses</h1>
+    <form id="formulaire">
+      <input type="text" id="saisie" placeholder="Ajouter un article…" autocomplete="off" required>
+      <button type="submit">Ajouter</button>
+    </form>
+    <ul id="liste"></ul>
+    <button id="tout-effacer" type="button">Tout effacer</button>
+  </div>
 
+  <script>
+    const CLE = 'liste-courses';
+    let articles = [];
+    try { articles = JSON.parse(localStorage.getItem(CLE)) || []; } catch (e) { articles = []; }
+
+    const liste = document.getElementById('liste');
+    const saisie = document.getElementById('saisie');
+    const boutonEffacer = document.getElementById('tout-effacer');
+
+    function sauvegarder() {
+      try { localStorage.setItem(CLE, JSON.stringify(articles)); } catch (e) {}
+    }
+
+    function afficher() {
+      liste.innerHTML = '';
+      if (articles.length === 0) {
+        liste.innerHTML = '<li class="vide">La liste est vide</li>';
+      }
+      articles.forEach((article, i) => {
+        const li = document.createElement('li');
+        if (article.coche) li.classList.add('coche');
+
+        const caseACocher = document.createElement('input');
+        caseACocher.type = 'checkbox';
+        caseACocher.checked = article.coche;
+        caseACocher.addEventListener('change', () => {
+          article.coche = caseACocher.checked;
+          sauvegarder();
+          afficher();
+        });
+
+        const texte = document.createElement('span');
+        texte.textContent = article.nom;
+
+        const supprimer = document.createElement('button');
+        supprimer.className = 'supprimer';
+        supprimer.textContent = '✕';
+        supprimer.title = 'Supprimer';
+        supprimer.addEventListener('click', () => {
+          articles.splice(i, 1);
+          sauvegarder();
+          afficher();
+        });
+
+        li.append(caseACocher, texte, supprimer);
+        liste.appendChild(li);
+      });
+      boutonEffacer.disabled = articles.length === 0;
+    }
+
+    document.getElementById('formulaire').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const nom = saisie.value.trim();
+      if (!nom) return;
+      articles.push({ nom, coche: false });
+      saisie.value = '';
+      sauvegarder();
+      afficher();
+    });
+
+    boutonEffacer.addEventListener('click', () => {
+      if (confirm('Effacer tous les articles ?')) {
+        articles = [];
+        sauvegarder();
+        afficher();
+      }
+    });
+
+    afficher();
+  </script>
+</body>
+</html>
